@@ -13,7 +13,7 @@ const route = express.Router();
 route.post("/", addCases);
 route.get("/", getCases);
 route.get("/:id", getCasesById);
-route.put("/", editCases);
+route.put("/:id", editCases);
 route.delete("/", deletedCases);
 
 module.exports = route;

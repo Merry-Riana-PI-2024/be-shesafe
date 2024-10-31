@@ -80,8 +80,9 @@ module.exports = {
   },
 
   editCases: async (req, res) => {
+    const { id } = req.params;
     const { userId } = req.payload;
-    const { title, description, category, message, _id } = req.body;
+    const { title, description, category, message } = req.body;
 
     if (!title) {
       return res.json({
@@ -111,7 +112,7 @@ module.exports = {
       }
 
       const updateData = await Cases.findOneAndUpdate(
-        { _id },
+        { _id: id },
         {
           title,
           description,
