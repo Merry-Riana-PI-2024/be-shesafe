@@ -7,17 +7,18 @@ module.exports = {
   getJournalByIdUser: async (req, res) => {
     //rename nama function
     const { userId } = req.user; //tambah req.user
-    const { page = 1, perPage = 10, sort = "desc" } = req.query; //rename limit to perPage
+    const { page = 1, perPage = 5, sort = "desc" } = req.query; //rename limit to perPage
     const sortOrder = sort === "asc" ? 1 : -1;
 
     try {
       const data = await Journal.find({ createdBy: userId }) // tambah createdBy:userId
         .populate("createdBy", "fullName")
+        .populate("category", "name")
         .sort({ created: sortOrder })
         .skip((page - 1) * perPage)
         .limit(perPage);
 
-      const total = await Journal.countDocuments();
+      const total = await Journal.countDocuments({ createdBy: userId });
       res.json({
         message: "Berhasil mendapatkan semua Journal",
         data,
@@ -34,30 +35,52 @@ module.exports = {
   getDetailJournal: async (req, res) => {
     const { id } = req.params;
 
-    const findJournal = await Journal.findById(id);
+    if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
+      return res.status(400).json({ message: 'Invalid journal ID' });
+    }
+
+    try {
+      const findJournal = await Journal.findById(id).populate("category", "name");
 
     res.json({
       message: "Berhasil mendapatkan detail Journal by id",
       findJournal,
     });
+    } catch (error) {
+      console.error("Error fetching detail journal: ", error)
+      res.json({message: "Gagal mendapatkan detail journal"})
+    }
+    
   },
 
   // Vita: tambah kondisi createdBy dari payload req.user
   addJournal: async (req, res) => {
-    const data = req.body;
-    const { userId } = req.user;
-
-    // Check if file uploaded
-    if (req.file) {
-      console.log("File uploaded: ", req.file);
-      data.file = `${req.file.filename}`;
-    } else {
-      console.log("No file uploaded");
-    }
-
-    const newJournal = new Journal({ ...data, createdBy: userId });
     try {
-      const savedJournal = await newJournal.save();
+      const { title, startDate, endDate, category, description } = req.body;
+      const { userId } = req.user;
+      let fileData = {};
+
+
+      // Check if file uploaded
+      if (req.file) {
+        fileData = {
+          path: req.file.path, // Cloudinary secure URL sama kyk cloudinary.url()
+          public_id: req.file.filename,  // Cloudinary public ID
+          originalname: req.file.originalname // Original filename
+        };
+      } 
+
+      const newJournal = new Journal({ 
+        title,
+        startDate,
+        endDate,
+        category,
+        description,
+        file: fileData, 
+        createdBy: userId,
+      });
+      
+
 
       // Hitung jumlah jurnal yang telah ditulis oleh pengguna
       const journalCount = await Journal.countDocuments({ createdBy: userId });
@@ -151,9 +174,11 @@ module.exports = {
           break; // Tidak ada email yang dikirim jika jumlah tidak sesuai
       }
 
+
+      await newJournal.save();
       res.json({
         message: "Journal berhasil dibuat",
-        savedJournal,
+        newJournal,
       });
     } catch (error) {
       console.log("Error saving journal", error);
@@ -165,24 +190,39 @@ module.exports = {
 
   editJournal: async (req, res) => {
     const { id } = req.params;
+    const { title, startDate, endDate, category, description } = req.body;
+    const journalData = { title, startDate, endDate, category, description, edited: new Date() };
 
-    const editData = {
-      ...req.body,
-      edited: new Date(), //auto set edit date
-    };
 
-    if (req.file) {
-      console.log("File uploaded: ", req.file);
-      editData.file = `${req.file.filename}`;
+    if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
+      return res.status(400).json({ message: 'Invalid journal ID' });
     }
 
-    const updatedJournal = await Journal.findByIdAndUpdate(id, editData, {
-      new: true,
-    });
-    res.json({
-      message: "Berhasil update Journal",
-      updatedJournal,
-    });
+    try {
+      //check apakah ada file baru diupload
+      if (req.file) {
+        journalData.file = {
+          path: req.file.path, // cloudinary url
+          public_id: req.file.filename,
+          originalname: req.file.originalname
+        };
+      } else {
+        //tampilkan journal yang sudah ada
+        const existingJournal = await Journal.findById(id);
+        if (existingJournal) {
+          journalData.file = existingJournal.file;
+        }
+      }
+      
+
+      const updatedJournal = await Journal.findByIdAndUpdate(id, journalData, { new: true });
+      if (!updatedJournal) return res.status(404).json({ message: "Journal not found" });
+      
+      res.status(200).json({ message: "Berhasil edit journal", updatedJournal });
+    } catch (error) {
+      console.error("gagal update journal", error)
+      return res.json({ message: "Internal server error, try again later" })
+    }
   },
 
   deleteJournal: async (req, res) => {

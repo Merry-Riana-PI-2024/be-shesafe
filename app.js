@@ -6,9 +6,12 @@ const db = require("./db");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true //allow cookies to be sent with request
+}));
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "http://localhost:5173"); // Ganti '*' dengan domain frontend jika perlu (misalnya, 'http://localhost:3001')
+  //res.header("Access-Control-Allow-Origin", "http://localhost:5173"); // Ganti '*' dengan domain frontend jika perlu (misalnya, 'http://localhost:3001')
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.header(
     "Access-Control-Allow-Headers",

@@ -7,7 +7,10 @@ const journalSchema = new mongoose.Schema({
   endDate: { type: Date, required: true },
   category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
   description: { type: String, required: true },
-  file: { type: String, required: false, default: null },
+  file: { 
+    path: { type: String, required: false, default: null }, //cloudinary url file yg diupload
+    originalname: { type: String, required: false, default: null } //original filename
+  },
   created: { type: Date, default: Date.now }, // Set default to current date
   deleted: { type: Date, default: null },
   edited: { type: Date, default: null },
