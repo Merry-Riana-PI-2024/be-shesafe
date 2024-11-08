@@ -7,6 +7,7 @@ const journalSchema = new mongoose.Schema({
   endDate: { type: Date, required: true },
   category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
   description: { type: String, required: true },
+  cronology: { type: String, required: true },
   file: { 
     path: { type: String, required: false, default: null }, //cloudinary url file yg diupload
     originalname: { type: String, required: false, default: null } //original filename

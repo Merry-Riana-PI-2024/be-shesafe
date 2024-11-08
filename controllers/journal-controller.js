@@ -56,7 +56,7 @@ module.exports = {
   // Vita: tambah kondisi createdBy dari payload req.user
   addJournal: async (req, res) => {
     try {
-      const { title, startDate, endDate, category, description } = req.body;
+      const { title, startDate, endDate, category, description, cronology } = req.body;
       const { userId } = req.user;
       let fileData = {};
 
@@ -76,6 +76,7 @@ module.exports = {
         endDate,
         category,
         description,
+        cronology,
         file: fileData, 
         createdBy: userId,
       });
@@ -190,8 +191,8 @@ module.exports = {
 
   editJournal: async (req, res) => {
     const { id } = req.params;
-    const { title, startDate, endDate, category, description } = req.body;
-    const journalData = { title, startDate, endDate, category, description, edited: new Date() };
+    const { title, startDate, endDate, category, description, cronology } = req.body;
+    const journalData = { title, startDate, endDate, category, description, cronology, edited: new Date() };
 
 
     if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
