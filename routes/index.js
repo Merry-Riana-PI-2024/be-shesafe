@@ -1,7 +1,6 @@
 const express = require("express");
 const route = express.Router();
 
-const checkRoute = require("./check-route");
 const userRoute = require("./user-route");
 const profileRoute = require("./profile-route");
 const journalRoute = require("./journal-route");
@@ -35,6 +34,5 @@ route.use("/admin", adminRoute);
 route.use("/approved", adminMiddleware, approvedRoute);
 route.use("/education", validateToken, educRoute);
 route.use("/admeducation", adminMiddleware, eduRoute);
-route.use("/check", validateToken, checkRoute);
 
 module.exports = route;

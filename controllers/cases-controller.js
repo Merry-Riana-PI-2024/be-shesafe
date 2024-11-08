@@ -2,8 +2,8 @@ const Cases = require("../models/Cases");
 const Journal = require("../models/Journal");
 
 module.exports = {
-  // Fungsi untuk mendapatkan semua kasus dengan pagination dan status
-  getCases: async (req, res) => {
+   // Fungsi untuk mendapatkan semua kasus dengan pagination dan status
+   getCases: async (req, res) => {
     const { status = "", page = 1, perPage = 10 } = req.query; //rename limit jadi perPage
 
     try {
@@ -12,9 +12,7 @@ module.exports = {
         .skip((page - 1) * perPage)
         .limit(Number(perPage));
 
-      const totalCases = await Cases.countDocuments(
-        status ? { isApproved: status } : {}
-      );
+      const totalCases = await Cases.countDocuments(status ? { isApproved: status } : {});
 
       res.status(200).json({
         message: "Berhasil mendapatkan semua kasus",
@@ -66,6 +64,22 @@ module.exports = {
     }
   },
 
+  //ini dari form pengajuan ketik pilih journal
+  getJournalById: async (req, res) => {
+    const Journal = req.query.JournalID || "";
+    const data = await Journal.find({ _id: Journal });
+    if (data) {
+      res.status(200).json({
+        message: "data jurnal berhasil ditampilkan",
+        data,
+      });
+    } else {
+      res.status(400).json({
+        message: "data jurnal tidak ditemukan",
+      });
+    }
+  },
+
   getCasesById: async (req, res) => {
     // const { userId } = req.user;
 
@@ -83,6 +97,7 @@ module.exports = {
       });
     }
   },
+ 
 
   addCases: async (req, res) => {
     const { userId } = req.user;
@@ -105,7 +120,6 @@ module.exports = {
         message: "Kategori tidak boleh kosong",
       });
     }
-    const counter = Math.round(Math.random() * 1e9);
 
     try {
       const newCases = new Cases({
@@ -117,7 +131,6 @@ module.exports = {
         created: new Date(),
         isApproved: "Submitted",
         journalID,
-        isAnonimous: "Anonim" + counter,
       });
       await newCases.save();
       res.status(201).json({
@@ -157,7 +170,6 @@ module.exports = {
         message: "Kategori tidak boleh kosong",
       });
     }
-    const counter = Math.round(Math.random() * 1e9);
 
     try {
       const newCases = new Cases({
@@ -169,7 +181,6 @@ module.exports = {
         created: new Date(),
         isApproved: "Draft",
         journalID,
-        isAnonimous: "Anonim" + counter,
       });
       await newCases.save();
       res.status(201).json({
@@ -189,30 +200,36 @@ module.exports = {
   },
 
   editCases: async (req, res) => {
-    const { id } = req.paramas;
+    const { id } = req.params; 
     const { userId } = req.user;
     const { title, description, category, message } = req.body;
 
     if (!title) {
-      return res.json({
+      return res.status(400).json({
         message: "Judul Kasus tidak boleh kosong",
       });
     }
 
     if (!description) {
-      return res.json({
+      return res.status(400).json({
         message: "Ringkasan Kasus tidak boleh kosong",
       });
     }
 
     if (!category) {
-      return res.json({
+      return res.status(400).json({
         message: "Kategori tidak boleh kosong",
       });
     }
 
     try {
-      const status = await Cases.findById({ _id });
+      const status = await Cases.findById(id); 
+
+      if (!status) {
+        return res.status(404).json({
+          message: "Kasus tidak ditemukan",
+        });
+      }
 
       if (status.isApproved === "Approved") {
         return res.status(403).json({
@@ -220,7 +237,7 @@ module.exports = {
         });
       }
 
-      const updateData = await Cases.findOneAndUpdate(
+      const updatedData = await Cases.findOneAndUpdate(
         { _id: id },
         {
           title,
@@ -228,24 +245,24 @@ module.exports = {
           category,
           message,
           createdBy: userId,
-        }
+        },
+        { new: true } 
       );
 
-      if (updateData) {
-        res.status(201).json({
+      if (updatedData) {
+        return res.status(200).json({
           message: "Berhasil Update",
-          data: {
-            title,
-            description,
-            category,
-            message,
-            createdBy: userId,
-          },
+          data: updatedData,
+        });
+      } else {
+        return res.status(404).json({
+          message: "Kasus tidak ditemukan untuk diperbarui",
         });
       }
     } catch (error) {
-      res.status(400).json({
-        message: "Gagal upload Pengajuan Kasus",
+      return res.status(500).json({
+        message: "Gagal update Pengajuan Kasus",
+        error: error.message,
       });
     }
   },

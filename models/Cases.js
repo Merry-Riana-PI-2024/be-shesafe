@@ -12,7 +12,6 @@ const casesSchema = new mongoose.Schema({
   approved: { type: Date },
   isApproved: { type: String },
   supportCounter: { type: Number },
-  commentCounter: { type: Number },
   message: { type: String }, // pesan untuk komunitas diisi oleh user bersifat opsional
   notes: { type: String }, //notes ini diisi oelh admin ketika approve dan bersifat opsional
   journalID: { type: Schema.Types.ObjectId, ref: "Journal", default: "null" },

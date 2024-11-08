@@ -37,7 +37,7 @@ const fileFilter = (req, file, cb) => {
   if (mimetype && extname) {
     cb(null, true);
   } else {
-    cb(new Error("Only image  are allowed"));
+    cb(new Error("Only image and video files are allowed"));
   }
 };
 

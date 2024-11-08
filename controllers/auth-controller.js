@@ -5,110 +5,52 @@ const jwt = require("jsonwebtoken");
 
 module.exports = {
   checkAuth: (req, res) => {
-    if (req.user) {
-      return res.status(200).json({ isAuthenticated: true, user: req.user });
+    const token = req.cookies.tokenUser; 
+    
+    if (!token) {
+      return res.status(401).json({ isAuthenticated: false });
     }
-    return res.status(401).json({ isAuthenticated: false });
+  
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_KEY);
+      return res.status(200).json({ isAuthenticated: true, user: decoded });
+    } catch (error) {
+      return res.status(401).json({ isAuthenticated: false });
+    }
   },
 
   regist: async (req, res) => {
-    // Mendapatkan data dari body request
-    const { fullName, email, gender, password, birthDate, passwordConfirm } =
-      req.body;
-
+    const { fullName, email, gender, password, birthDate } = req.body;
+  
     // Validasi input
-    if (!fullName) {
-      return res
-        .status(400)
-        .json({ message: "Nama lengkap tidak boleh kosong" });
-    }
-
-    if (!email) {
-      return res.status(400).json({ message: "Email tidak boleh kosong" });
-    }
-
-    if (!gender) {
-      return res
-        .status(400)
-        .json({ message: "Jenis kelamin tidak boleh kosong" });
-    }
-
-    if (!password) {
-      return res.status(400).json({ message: "Password tidak boleh kosong" });
-    }
-
-    if (!passwordConfirm) {
-      return res
-        .status(400)
-        .json({ message: "Konfirmasi password tidak boleh kosong" });
-    }
-
-    if (password !== passwordConfirm) {
-      return res
-        .status(400)
-        .json({ message: "Password dan konfirmasi password tidak cocok" });
-    }
-
-    if (!birthDate) {
-      return res
-        .status(400)
-        .json({ message: "Tanggal lahir tidak boleh kosong" });
-    }
-
-    // Validasi email (Format)
-    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: "Email tidak valid" });
-    }
-
-    // Validasi file identitas
-    if (!req.file) {
-      return res
-        .status(400)
-        .json({ message: "Bukti identitas tidak boleh kosong" });
-    }
-
-    // Validasi tipe file
-    const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
-    if (!allowedMimeTypes.includes(req.file.mimetype)) {
-      return res.status(400).json({
-        message: "Hanya file gambar (jpeg, png, jpg) yang diperbolehkan",
-      });
-    }
-
-    // Validasi ukuran file (misalnya maksimal 2MB)
-    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
-    if (req.file.size > MAX_SIZE) {
-      return res
-        .status(400)
-        .json({ message: "File terlalu besar, maksimal 2MB" });
-    }
-
+    if (!fullName) return res.status(400).json({ message: "fullname tidak boleh kosong" });
+    if (!email) return res.status(400).json({ message: "email tidak boleh kosong" });
+    if (!gender) return res.status(400).json({ message: "gender tidak boleh kosong" });
+    if (!password) return res.status(400).json({ message: "password tidak boleh kosong" });
+    if (!birthDate) return res.status(400).json({ message: "tanggal lahir tidak boleh kosong" });
+    if (!req.file) return res.status(400).json({ message: "Bukti Identitas tidak boleh kosong" });
+  
     try {
-      // Cek apakah email sudah digunakan
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+  
       const checkEmail = await User.findOne({ email });
       if (checkEmail) {
         return res.status(400).json({
           message: "Email sudah digunakan, silahkan gunakan Email yang lain",
         });
       }
-
-      // Hash password
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-      // Simpan data pengguna baru
+  
       const newUser = new User({
         fullName,
         email,
         gender,
         birthDate,
-        fileIdentity: req.file.path, // Menyimpan path file yang diupload
-        password: hashedPassword, // Password yang sudah di-hash
+        fileIdentity: req.file.path,
+        password: hashedPassword,
       });
-
       await newUser.save();
-
+  
       return res.status(201).json({
         message: "Berhasil Registrasi",
         data: {
@@ -119,9 +61,7 @@ module.exports = {
         },
       });
     } catch (error) {
-      return res
-        .status(500)
-        .json({ message: "Gagal Registrasi", error: error.message });
+      return res.status(400).json({ message: "Gagal Registrasi", error: error.message });
     }
   },
 
@@ -138,13 +78,14 @@ module.exports = {
     //CheckAccount
     if (user.isValidated !== "validated") {
       return res
-        .status(403)
+        .status(404)
         .json({ message: "Akun anda belum tervalidasi identitasnya" });
     }
 
     //if user exist -> compare pass w/ bcrypt
     const checkPassword = await bcrypt.compare(data.password, user.password);
-    if (!checkPassword) return res.status(401).json({ message: "Gagal login" });
+    if (!checkPassword) return res.json({ message: "Gagal login" });
+
     //token
     try {
       const token = jwt.sign(
@@ -154,10 +95,8 @@ module.exports = {
 
       res.cookie("tokenUser", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        // secure: false,
-        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-        // Partitioned: true,
+        secure: false,
+        sameSite: true,
         // { expiresIn: "1h" }
       });
 
@@ -171,10 +110,7 @@ module.exports = {
   },
 
   logout: (req, res) => {
-    res.clearCookie("tokenUser", {
-      httpOnly: true,
-       secure: process.env.NODE_ENV === "production",
-       sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-  });    res.status(201).json({ message: "berhasil Logout" });
+    res.clearCookie("tokenUser");
+    res.status(201).json({ message: "berhasil Logout" });
   },
 };

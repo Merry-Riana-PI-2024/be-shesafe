@@ -13,7 +13,6 @@ module.exports = {
     try {
       const data = await Journal.find({ createdBy: userId }) // tambah createdBy:userId
         .populate("createdBy", "fullName")
-        .populate("category", "name")
         .sort({ created: sortOrder })
         .skip((page - 1) * perPage)
         .limit(perPage);

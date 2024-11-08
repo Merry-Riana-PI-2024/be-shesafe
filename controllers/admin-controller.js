@@ -15,28 +15,27 @@ module.exports = {
 
   regist: async (req, res) => {
     const { fullName, email, password } = req.body;
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // Validasi field
     if (!fullName) {
-      return res.json({ message: "fullname tidak boleh kosong" });
+      return res.status(400).json({ message: "Fullname tidak boleh kosong" });
     }
-
     if (!email) {
-      return res.json({ message: "email tidak boleh kosong" });
+      return res.status(400).json({ message: "Email tidak boleh kosong" });
     }
-
     if (!password) {
-      return res.json({ message: "password tidak boleh kosong" });
+      return res.status(400).json({ message: "Password tidak boleh kosong" });
     }
 
     try {
+      // Hash password hanya setelah semua field tervalidasi
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+
       // Cek apakah email sudah digunakan
       const checkEmail = await User.findOne({ email });
-
       if (checkEmail) {
-        return res.json({
+        return res.status(400).json({
           message: "Email sudah digunakan, silahkan gunakan Email yang lain",
         });
       }
@@ -54,13 +53,10 @@ module.exports = {
         data: {
           fullName: newUser.fullName,
           email: newUser.email,
-          gender: newUser.gender,
         },
       });
     } catch (error) {
-      return res
-        .status(400)
-        .json({ message: "Gagal Registrasi", error: error.message });
+      return res.status(400).json({ message: "Gagal Registrasi", error: error.message });
     }
   },
 
@@ -88,9 +84,8 @@ module.exports = {
       res
         .cookie("token", token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-          // Partitioned: true,
+          secure: false,
+          sameSite: true,
         })
         .status(201)
         .json({ message: "User Berhasil Login" });

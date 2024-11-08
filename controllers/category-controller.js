@@ -11,7 +11,7 @@ module.exports = {
   },
 
   getAllCategory: async (req, res) => {
-    const data = await Category.find([]);
+    const data = await Category.find({});
 
     res.json({
       message: "berhasil mendapatkan data",
@@ -85,6 +85,24 @@ module.exports = {
     } catch (error) {
       res.status(500).json({
         message: "Terjadi kesalahan saat menghapus data",
+        error: error.message,
+      });
+    }
+  },
+  getCategoryById: async (req, res) => {
+    const { id } = req.params; 
+    try {
+      const category = await Category.findById(id);
+      if (!category) {
+        return res.status(404).json({ message: "Data tidak ditemukan" });
+      }
+      res.json({
+        message: "Berhasil mendapatkan data",
+        data: category,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Terjadi kesalahan saat mengambil data",
         error: error.message,
       });
     }

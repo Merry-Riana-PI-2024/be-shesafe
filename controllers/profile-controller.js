@@ -1,5 +1,4 @@
 const User = require("../models/User");
-const { v2: cloudinary } = require("cloudinary");
 
 module.exports = {
   getProfile: async (req, res) => {
@@ -27,48 +26,42 @@ module.exports = {
   },
 
   editProfile: async (req, res) => {
-    const { id } = req.params;
-    const editData = {
-      ...req.body,
-      edited: new Date(), //auto set edit date
-    };
+    try {
+      const { id } = req.params;
+      const editData = {
+        ...req.body,
+        edited: new Date(), // Auto-set edit date
+      };
 
-    let fileUrl = "";
-
-    if (req.file) {
-      try {
-        const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
-          use_filename: true,
-          unique_filename: false,
-        });
-        // Ambil URL gambar yang telah di-upload
-        fileUrl = uploadResponse.secure_url;
-        editData.avatar = fileUrl; // Set avatar di editData
-      } catch (error) {
-        console.error("Cloudinary upload failed:", error);
-        return res.status(500).json({
-          message: "Failed to upload image to Cloudinary",
-          error: error.message,
-        });
+      // Jika ada file yang diunggah, tambahkan ke editData
+      if (req.file) {
+        console.log("File uploaded: ", req.file);
+        // Sesuaikan jalur avatar sesuai kebutuhan (gunakan URL penuh jika file diunggah ke Cloudinary)
+        editData.avatar = req.file.path; 
       }
+
+      // Perbarui data user
+      const updatedUser = await User.findByIdAndUpdate(id, editData, { new: true });
+
+      // Jika user tidak ditemukan, kembalikan pesan error
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User tidak ditemukan" });
+      }
+
+      // Jika berhasil, kembalikan data user yang diperbarui
+      res.json({
+        message: "Berhasil mengupdate user",
+        data: {
+          fullName: updatedUser.fullName,
+          email: updatedUser.email,
+          gender: updatedUser.gender,
+          birthDate: updatedUser.birthDate,
+          avatar: updatedUser.avatar,
+        },
+      });
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      res.status(400).json({ message: "Gagal mengupdate user", error: error.message });
     }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      { _id: id },
-      { ...editData },
-      {
-        new: true,
-      }
-    );
-    res.json({
-      message: "Berhasil mengupdate user",
-      data: {
-        fullName: updatedUser.fullName,
-        email: updatedUser.email,
-        gender: updatedUser.gender,
-        birthDate: updatedUser.birthDate,
-        avatar: updatedUser.avatar,
-      },
-    });
   },
 };

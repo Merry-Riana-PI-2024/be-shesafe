@@ -7,6 +7,7 @@ const {
   login,
   // getUser,
   logout,
+  checkAuth,
 } = require("../controllers/auth-controller");
 
 const { v2: cloudinary } = require("cloudinary");
@@ -54,5 +55,8 @@ const route = express.Router();
 route.post("/register", upload.single("fileIdentity"), regist);
 route.post("/login", login);
 route.post("/logout", logout);
+
+// route.get("/users", getUser);
+route.get("/check", checkAuth);
 
 module.exports = route;
