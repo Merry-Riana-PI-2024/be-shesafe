@@ -11,8 +11,6 @@ const {
 const multer = require("multer");
 const path = require("path");
 const { v2: cloudinary } = require("cloudinary");
-const { v2: cloudinary } = require("cloudinary");
-
 // Konfigurasi Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
