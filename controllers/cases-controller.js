@@ -5,16 +5,20 @@ module.exports = {
   // Fungsi untuk mendapatkan semua kasus dengan pagination dan status
   getCases: async (req, res) => {
     const { status = "", page = 1, perPage = 10 } = req.query; //rename limit jadi perPage
-
+    const { userId } = req.user;
     try {
-      const cases = await Cases.find(status ? { isApproved: status } : {})
+      const cases = await Cases.find({
+        createdBy: userId,
+        ...(status ? { isApproved: status } : {}),
+      })
         .sort({ created: "desc" })
         .skip((page - 1) * perPage)
         .limit(Number(perPage));
 
-      const totalCases = await Cases.countDocuments(
-        status ? { isApproved: status } : {}
-      );
+      const totalCases = await Cases.countDocuments({
+        createdBy: userId,
+        ...(status ? { isApproved: status } : {}),
+      });
 
       res.status(200).json({
         message: "Berhasil mendapatkan semua kasus",
@@ -28,40 +32,6 @@ module.exports = {
       res.status(500).json({
         message: "Gagal mendapatkan kasus",
         error: error.message,
-      });
-    }
-  },
-
-  getCases_bcp: async (req, res) => {
-    const { userId } = req.user;
-    const Status = req.query.status || "";
-
-    const data = await Cases.find({
-      createdBy: userId,
-      isApproved: Status,
-    }).sort({
-      created: "desc",
-    });
-
-    res.json({
-      message: "berhasil mendapatkan data semua user",
-      data,
-    });
-  },
-
-  //ajukan kasus dengan get data jurnal dulu , biar autofilled di form
-  getJournalforCasesByID: async (req, res) => {
-    const { id } = req.params; //idjurnal
-    const data = await Journal.findOne({ _id: id });
-
-    if (data) {
-      res.status(200).json({
-        message: "data jurnal berhasil tampil",
-        data,
-      });
-    } else {
-      res.status(400).json({
-        message: "data jurnal tidak ditemukan",
       });
     }
   },
