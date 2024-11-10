@@ -46,17 +46,22 @@ module.exports = {
   // Vita: tambah kondisi createdBy dari payload req.user
   addJournal: async (req, res) => {
     const data = req.body;
+    const { fileUrl } = req.body;
     const { userId } = req.user;
 
     // Check if file uploaded
-    if (req.file) {
-      console.log("File uploaded: ", req.file);
-      data.file = `${req.file.filename}`;
-    } else {
-      console.log("No file uploaded");
-    }
+    // if (req.file) {
+    //   console.log("File uploaded: ", req.file);
+    //   data.file = `${req.file.filename}`;
+    // } else {
+    //   console.log("No file uploaded");
+    // }
 
-    const newJournal = new Journal({ ...data, createdBy: userId });
+    const newJournal = new Journal({
+      ...data,
+      createdBy: userId,
+      file: fileUrl,
+    });
     try {
       const savedJournal = await newJournal.save();
 

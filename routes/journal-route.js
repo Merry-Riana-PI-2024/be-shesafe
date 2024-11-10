@@ -10,6 +10,7 @@ const {
 } = require("../controllers/journal-controller");
 const multer = require("multer");
 const path = require("path");
+const streamifier = require("streamifier");
 const { v2: cloudinary } = require("cloudinary");
 // Konfigurasi Cloudinary
 cloudinary.config({
