@@ -195,7 +195,7 @@ module.exports = {
   },
 
   editCases: async (req, res) => {
-    const { id } = req.paramas;
+    const { id } = req.params;
     const { userId } = req.user;
     const { title, description, category, message } = req.body;
 
@@ -218,13 +218,13 @@ module.exports = {
     }
 
     try {
-      const status = await Cases.findById({ _id });
+      // const status = await Cases.findById({ _id });
 
-      if (status.isApproved === "Approved") {
-        return res.status(403).json({
-          message: "Tidak bisa melakukan update karena sudah diapproved",
-        });
-      }
+      // if (status.isApproved === "Approved") {
+      //   return res.status(403).json({
+      //     message: "Tidak bisa melakukan update karena sudah diapproved",
+      //   });
+      // }
 
       const updateData = await Cases.findOneAndUpdate(
         { _id: id },
@@ -234,6 +234,7 @@ module.exports = {
           category,
           message,
           createdBy: userId,
+          isApproved: "Submitted",
         }
       );
 
@@ -246,6 +247,7 @@ module.exports = {
             category,
             message,
             createdBy: userId,
+            isApproved: "Submitted",
           },
         });
       }
@@ -257,10 +259,10 @@ module.exports = {
   },
 
   deletedCases: async (req, res) => {
-    const { _id } = req.body;
-    // const { userId } = req.user;
+    // const { _id } = req.body;
+    const { id } = req.params;
 
-    const deleteByID = await Cases.deleteOne({ _id });
+    const deleteByID = await Cases.deleteOne({ _id: id });
 
     try {
       if (deleteByID) {

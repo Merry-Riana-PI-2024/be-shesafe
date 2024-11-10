@@ -17,7 +17,7 @@ route.post("/draft", addCasesDraft);
 route.get("/", getCases);
 route.get("/:id", getCasesById);
 route.put("/:id", editCases);
-route.delete("/", deletedCases);
+route.delete("/:id", deletedCases);
 route.get("/byjournal/:id", getJournalforCasesByID);
 
 module.exports = route;
