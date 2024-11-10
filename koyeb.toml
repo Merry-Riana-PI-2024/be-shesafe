@@ -1,0 +1,3 @@
+name = "be-shesafe"
+http_port = 3000
+nginx_config = "nginx.conf" 
