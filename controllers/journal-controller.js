@@ -1,3 +1,4 @@
+const FileJournal = require("../models/FileJournal");
 const Journal = require("../models/Journal");
 require("dotenv").config();
 const nodemailer = require("nodemailer");
@@ -46,26 +47,11 @@ module.exports = {
   // Vita: tambah kondisi createdBy dari payload req.user
   addJournal: async (req, res) => {
     const data = req.body;
-    const { fileUrl } = req.body;
     const { userId } = req.user;
-
-    // Check if file uploaded
-    // if (req.file) {
-    //   console.log("File uploaded: ", req.file);
-    //   data.file = `${req.file.filename}`;
-    // } else {
-    //   console.log("No file uploaded");
-    // }
-    if (!fileUrl) {
-      return res.status(400).json({
-        message: "File URL tidak ditemukan, pastikan file telah diupload.",
-      });
-    }
 
     const newJournal = new Journal({
       ...data,
       createdBy: userId,
-      file: fileUrl,
     });
     try {
       const savedJournal = await newJournal.save();
@@ -175,38 +161,92 @@ module.exports = {
   },
 
   editJournal: async (req, res) => {
-    const { id } = req.params;
-    const { fileUrl } = req.body;
+    try {
+      const { id } = req.params;
+      const { title, description, startDate, endDate } = req.body;
 
-    const editData = {
-      ...req.body,
-      edited: new Date(), //auto set edit date
-    };
+      // Periksa apakah semua field diterima
+      console.log("Data received:", {
+        title,
+        description,
+        startDate,
+        endDate,
+      });
 
-    if (!fileUrl) {
-      return res.status(400).json({
-        message: "File URL tidak ditemukan, pastikan file telah diupload.",
+      const editData = {
+        title,
+        description,
+        startDate,
+        endDate,
+        edited: new Date(), // auto set edit date
+      };
+
+      // Lakukan update
+      const updatedJournal = await Journal.findByIdAndUpdate(id, editData, {
+        new: true,
+      });
+
+      if (!updatedJournal) {
+        return res.status(404).json({
+          message: "Journal not found or could not be updated",
+        });
+      }
+
+      // Tampilkan hasil sukses
+      res.json({
+        message: "Berhasil update Journal",
+        updatedJournal,
+      });
+    } catch (error) {
+      console.error("Error updating journal:", error);
+      res.status(500).json({
+        message: "Gagal update Journal",
       });
     }
-
-    if (fileUrl) {
-      console.log("File uploaded: ", fileUrl);
-      editData.file = fileUrl;
-    }
-
-    const updatedJournal = await Journal.findByIdAndUpdate(id, editData, {
-      new: true,
-    });
-    res.json({
-      message: "Berhasil update Journal",
-      updatedJournal,
-    });
   },
 
   deleteJournal: async (req, res) => {
     const { id } = req.params;
 
     await Journal.findByIdAndDelete(id);
+    await FileJournal.deleteOne({ journalId: id });
+
+    res.json({
+      message: "Berhasil hapus Journal",
+    });
+  },
+
+  addFile: async (req, res) => {
+    const { id } = req.params;
+    const { fileUrl } = req.body;
+    const { userId } = req.user;
+
+    const newFile = new FileJournal({
+      createdBy: userId,
+      journalId: id,
+      file: fileUrl,
+    });
+    const savedFile = await newFile.save();
+    res.json({
+      message: "berhasil menambahkan file",
+      savedFile,
+    });
+  },
+
+  getFile: async (req, res) => {
+    const { id } = req.params;
+
+    const data = await FileJournal.find({ journalId: id });
+    res.json({
+      message: "berhasil mendapatkan data ",
+      data,
+    });
+  },
+
+  deleteFile: async (req, res) => {
+    const { id } = req.params;
+
+    await FileJournal.findByIdAndDelete({ _id: id });
 
     res.json({
       message: "Berhasil hapus Journal",

@@ -7,6 +7,9 @@ const {
   editJournal,
   deleteJournal,
   getDetailJournal,
+  addFile,
+  getFile,
+  deleteFile,
 } = require("../controllers/journal-controller");
 const multer = require("multer");
 const path = require("path");
@@ -23,7 +26,7 @@ cloudinary.config({
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // Batas ukuran file 2MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // Batas ukuran file 2MB
   fileFilter: (req, file, cb) => {
     const allowedExtensions = /jpg|jpeg|png|pdf|mp4|mov/;
     const extname = allowedExtensions.test(
@@ -53,7 +56,8 @@ function uploadToCloudinary(buffer) {
 }
 route.get("/", getJournalByIdUser); //get Journal by id user
 route.get("/:id", getDetailJournal); //get Detail journal by id
-route.post("/", upload.single("file"), async (req, res, next) => {
+route.get("/file/:id", getFile);
+route.post("/file/:id", upload.single("file"), async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).send("No file uploaded.");
@@ -61,23 +65,13 @@ route.post("/", upload.single("file"), async (req, res, next) => {
 
     const result = await uploadToCloudinary(req.file.buffer);
     req.body.fileUrl = result.secure_url;
-    await addJournal(req, res);
+    await addFile(req, res);
   } catch (error) {
     next(error);
   }
-}); //add Journal
-route.put("/:id", upload.single("file"), async (req, res, next) => {
-  try {
-    if (!req.file) {
-      return res.status(400).send("No file uploaded.");
-    }
-
-    const result = await uploadToCloudinary(req.file.buffer);
-    req.body.fileUrl = result.secure_url;
-    await addJournal(req, res);
-  } catch (error) {
-    next(error);
-  }
-}); //edit journal
+});
+route.delete("/file/:id", deleteFile); //delete by id
+route.post("/", addJournal);
+route.put("/:id", editJournal); //edit journal
 route.delete("/:id", deleteJournal); //delete by id
 module.exports = route;
