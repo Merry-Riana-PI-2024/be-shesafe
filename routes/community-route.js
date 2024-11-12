@@ -16,7 +16,7 @@ const route = express.Router();
 
 route.post("/commentar/:id", addCommentar);
 route.get("/commentar/:id", getCommentar);
-route.delete("/commentar/:casesID", deleteCommentar);
+route.delete("/commentar/:id", deleteCommentar);
 route.get("/", getCommunity);
 route.get("/:id", getCommunityById);
 route.post("/support/:id", addSupportById);
