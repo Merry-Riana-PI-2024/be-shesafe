@@ -7,12 +7,12 @@ const db = require("./db");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 app.use(cookieParser());
+const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",");
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      const allowedOrigins = process.env.ALLOWED_ORIGINS;
-      // const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",");
+      // const allowedOrigins = process.env.ALLOWED_ORIGINS;
 
       console.log("Incoming Origin:", origin);
 
