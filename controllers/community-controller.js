@@ -186,7 +186,7 @@ module.exports = {
       const { userId } = req.user;
 
       // Menghapus komentar berdasarkan _id
-      const deleteComment = await Commentar.findByIdAndDelete({ _id: id });
+      const deleteComment = await Commentar.findByIdAndDelete(id);
 
       if (!deleteComment) {
         return res.status(404).json({
