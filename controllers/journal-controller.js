@@ -19,7 +19,10 @@ module.exports = {
         .skip((page - 1) * perPage)
         .limit(perPage);
 
-      const total = await Journal.countDocuments();
+      const total = await Journal.countDocuments({
+        createdBy: userId,
+      });
+
       res.json({
         message: "Berhasil mendapatkan semua Journal",
         data,
