@@ -6,7 +6,6 @@ const allRoute = require("./routes");
 const db = require("./db");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-app.use(cookieParser());
 const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",");
 
 app.use(
@@ -42,7 +41,19 @@ app.use((req, res, next) => {
 
 app.options("*", cors());
 
+// Middleware: Cache control
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  next();
+});
+
+// Middleware: JSON and Cookies
 app.use(express.json());
+app.use(cookieParser());
+
 db.then(() => {
   console.log("berhasil connect ke database");
 }).catch((e) => {
