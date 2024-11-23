@@ -26,9 +26,9 @@ cloudinary.config({
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // Batas ukuran file 2MB
+  limits: { fileSize: 50 * 1024 * 1024 }, 
   fileFilter: (req, file, cb) => {
-    const allowedExtensions = /jpg|jpeg|png|pdf|mp4|mov/;
+    const allowedExtensions = /jpg|jpeg|png|pdf|mp4|mov|mp3|wav|mpeg|ogg/;
     const extname = allowedExtensions.test(
       path.extname(file.originalname).toLowerCase()
     );
@@ -42,28 +42,56 @@ const upload = multer({
 });
 
 // Fungsi untuk mengunggah file ke Cloudinary menggunakan stream
-function uploadToCloudinary(buffer) {
+function uploadToCloudinary(buffer, mimetype) {
   return new Promise((resolve, reject) => {
+    if (!mimetype) {
+      return reject(new Error('Mimetype is missing or invalid'));
+    }
+
+    let resourceType = 'auto';  // Default resource type
+
+    if (mimetype.startsWith("video/")) {
+      resourceType = "video";  // Mengupload file video
+    } else if (mimetype === "application/pdf") {
+      resourceType = "raw";  // Mengupload file PDF
+    } else if (mimetype.startsWith("image/")) {
+      resourceType = "image";  // Mengupload file gambar
+    }else if (mimetype.startsWith("audio/")) {
+      resourceType = "raw";  // Mengupload file audio
+    }else {
+      // Jika mimetype tidak dikenal, kirimkan error
+      reject(new Error(`Unsupported file type: ${mimetype}`));
+      return;
+    }
+
+    // Upload ke Cloudinary
     const uploadStream = cloudinary.uploader.upload_stream(
-      { folder: "journal" }, // Tentukan folder Cloudinary
+      {
+        folder: "journal", 
+        resource_type: resourceType,  
+      },
       (error, result) => {
         if (error) reject(error);
         else resolve(result);
       }
     );
+    
     streamifier.createReadStream(buffer).pipe(uploadStream);
   });
 }
+
 route.get("/", getJournalByIdUser); //get Journal by id user
 route.get("/:id", getDetailJournal); //get Detail journal by id
 route.get("/file/:id", getFile);
 route.post("/file/:id", upload.single("file"), async (req, res, next) => {
   try {
+    console.log("File uploaded:", req.file);
+    
     if (!req.file) {
       return res.status(400).send("No file uploaded.");
     }
 
-    const result = await uploadToCloudinary(req.file.buffer);
+    const result = await uploadToCloudinary(req.file.buffer, req.file.mimetype);
     req.body.fileUrl = result.secure_url;
     await addFile(req, res);
   } catch (error) {
